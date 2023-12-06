@@ -1,0 +1,106 @@
+﻿@page "/todo"
+@using System.Text.Json
+@using ToDo.ClientSide2.Entities
+@using ToDo.ClientSide2.HttpServices
+
+<h3>ToDos</h3>
+
+<h3>ToDoList: <spna class="text-danger">@listTitle</spna></h3>
+
+<hr />
+
+<div class="row">
+    <div class="col-2"><label>Назва списку:</label></div>
+    <div class="col-4"><input @bind-value="listTitle" class="form-control" /></div>
+</div>
+
+<hr />
+
+<div class="row">
+
+        <div class="col-2"><label>Введіть задачу:</label></div>
+    <div class="col-3"><input @bind-value="newItem.Text" class="form-control" /></div>
+    <div class="col-3">
+        @if(!string.IsNullOrEmpty(newItem.UserId))
+        {        
+            <InputSelect id="users" @bind-Value="@newItem.UserId" TValue="string" class="form-control">
+                    @foreach(var u in usersList)
+                    {
+                        <option value="@u.Id">@u.Name</option>
+                    }
+                </InputSelect>
+  
+        }
+    </div>
+    <div class="col-3"> <InputDate Type="InputDateType.DateTimeLocal" min="@DateTime.Today.ToString("MM-dd-yyyy")" @bind-Value="newItem.DueDate" class="form-control" /></div>
+    <div class="col-2">
+        <button type="button" @onclick="addToDo" class="btn btn-outline-primary">Додати задачу</button>
+    </div>
+
+</div>
+
+@if (todoList is null)
+{
+    <div class="alert alert-info">Справи відсутні!</div>
+}
+else
+{
+    <br />
+    <div class="alert alert-warning">
+        <ul>
+            @foreach (var t in todoList)
+            {
+                <li><input value="@t.IsComplete" type="checkbox" disabled /><span>[@t.DueDate.ToString("dd.MM.yy HH:mm:ss")]</span> @t.Text (@t.User.Name) &nbsp;&nbsp;&nbsp;<button @onclick="@(e => removeToDo(t.Id))" class="btn btn-sm btn-outline-danger">видалити</button></li>
+            }
+        </ul>
+    </div>
+}
+
+@foreach(var id in usersList)
+{
+    <p>@id.Id</p>
+}
+
+@code {
+
+    [Inject]
+    public ToDoHttpService toDoService { get; set; }
+
+    [Inject]
+    public UserHttpService userService { get; set; }
+
+
+    string listTitle = "Мій список!";
+    ToDoItemDto newItem = new ToDoItemDto { DueDate = DateTime.Now, UserId = string.Empty };
+
+    List<ToDoItemDto> todoList = null;
+    List<User> usersList = new List<User>();
+
+    async Task addToDo()
+    {
+        Console.WriteLine(JsonSerializer.Serialize(newItem));
+        var item = await toDoService.AddAsync(newItem);
+        todoList.Add(item);
+        newItem = new ToDoItemDto { DueDate = DateTime.Now, UserId = usersList.First().Id.ToString() };
+    }
+
+    async Task removeToDo(Guid id)
+    {
+        await toDoService.DeleteAsync((Guid)id);
+        todoList.Remove(todoList.First(x => x.Id == id));
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        todoList = await toDoService.GetAllAsync();      
+        usersList = await userService.GetAllAsync();
+        newItem.UserId = usersList.First().Id.ToString();
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        //todoList = (await toDoService.GetAllAsync()).Select(x=> x.Text).ToList();
+    }
+}
