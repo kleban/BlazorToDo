@@ -10,7 +10,6 @@ namespace ToDo.ServerSide.Controllers
     public class UserController : ControllerBase
     {
         private readonly DataContext _context;
-
         public UserController(DataContext context)
         {
             _context = context;

@@ -20,9 +20,9 @@ namespace ToDo.ClientSide2.HttpServices
 
         public async Task<ToDoItemDto> AddAsync(ToDoItemDto item)
         {
-            var newItem = await _httpClient.PostAsJsonAsync<ToDoItemDto>("/api/todo", item);
+            var response = await _httpClient.PostAsJsonAsync<ToDoItemDto>("/api/todo", item);
             //check
-            return await newItem.Content.ReadFromJsonAsync<ToDoItemDto>();
+            return await response.Content.ReadFromJsonAsync<ToDoItemDto>();
         }
 
         public async Task DeleteAsync(Guid id)
